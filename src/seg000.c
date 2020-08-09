@@ -13,9 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
@@ -27,6 +27,8 @@ dat_type * dathandle;
 
 // data:4C08
 word need_redraw_because_flipped;
+
+void fix_sound_priorities();
 
 // seg000:0000
 void far pop_main() {
@@ -50,6 +52,10 @@ void far pop_main() {
 	#ifdef CHECK_SEQTABLE_MATCHES_ORIGINAL
 	check_seqtable_matches_original();
 	#endif
+
+#ifdef FIX_SOUND_PRIORITIES
+	fix_sound_priorities();
+#endif
 
 	load_global_options();
 	check_mod_param();
@@ -338,7 +344,7 @@ const char* get_quick_path(char* custom_path_buffer, size_t max_len) {
 		return quick_file;
 	}
 	// if playing a custom levelset, try to use the mod folder
-	snprintf(custom_path_buffer, max_len, "%s/%s", mod_data_path, quick_file /*QUICKSAVE.SAV*/ );
+	snprintf_check(custom_path_buffer, max_len, "%s/%s", mod_data_path, quick_file /*QUICKSAVE.SAV*/ );
 	return custom_path_buffer;
 }
 
@@ -1216,7 +1222,13 @@ void get_joystick_state(int raw_x, int raw_y, int axis_state[2]) {
 
 	// check if the X/Y position is within the 'dead zone' of the joystick
 	int dist_squared = raw_x*raw_x + raw_y*raw_y;
-	if (dist_squared < joystick_threshold*joystick_threshold) {
+	// FIXED: Left jump (top-left) didn't work on some gamepads.
+	// On some gamepads, raw_x = raw_y = -32768 in the top-left corner.
+	// In this case, dist_squared is calculated as -32768 * -32768 + -32768 * -32768 = 2147483648.
+	// But dist_squared is a 32-bit signed integer, which cannot store that number, so it overflows to -2147483648.
+	// Therefore, dist_squared < joystick_threshold*joystick_threshold becomes true, and the game thinks the stick is centered.
+	// To fix this, we cast both sides of the comparison to an unsigned 32-bit type.
+	if ((dword)dist_squared < (dword)(joystick_threshold*joystick_threshold)) {
 		axis_state[0] = 0;
 		axis_state[1] = 0;
 	} else {
@@ -1389,18 +1401,136 @@ void __pascal far do_delta_hp() {
 }
 
 byte sound_prio_table[] = {
-	0x14, 0x1E, 0x23, 0x66, 0x32, 0x37, 0x30, 0x30, 0x4B, 0x50, 0x0A,
-	0x12, 0x0C, 0x0B, 0x69, 0x6E, 0x73, 0x78, 0x7D, 0x82, 0x91, 0x96,
-	0x9B, 0xA0, 1, 1, 1, 1, 1, 0x13, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 0, 1, 1, 1, 1, 0x87, 0x8C, 0x0F, 0x10, 0x19, 0x16, 1,
-	0, 1, 1, 1, 1, 1, 0
+	0x14, // sound_0_fell_to_death
+	0x1E, // sound_1_falling
+	0x23, // sound_2_tile_crashing
+	0x66, // sound_3_button_pressed
+	0x32, // sound_4_gate_closing
+	0x37, // sound_5_gate_opening
+	0x30, // sound_6_gate_closing_fast
+	0x30, // sound_7_gate_stop
+	0x4B, // sound_8_bumped
+	0x50, // sound_9_grab
+	0x0A, // sound_10_sword_vs_sword
+	0x12, // sound_11_sword_moving
+	0x0C, // sound_12_guard_hurt
+	0x0B, // sound_13_kid_hurt
+	0x69, // sound_14_leveldoor_closing
+	0x6E, // sound_15_leveldoor_sliding
+	0x73, // sound_16_medium_land
+	0x78, // sound_17_soft_land
+	0x7D, // sound_18_drink
+	0x82, // sound_19_draw_sword
+	0x91, // sound_20_loose_shake_1
+	0x96, // sound_21_loose_shake_2
+	0x9B, // sound_22_loose_shake_3
+	0xA0, // sound_23_footstep
+	0x01, // sound_24_death_regular
+	0x01, // sound_25_presentation
+	0x01, // sound_26_embrace
+	0x01, // sound_27_cutscene_2_4_6_12
+	0x01, // sound_28_death_in_fight
+	0x13, // sound_29_meet_Jaffar
+	0x01, // sound_30_big_potion
+	0x01, // sound_31
+	0x01, // sound_32_shadow_music
+	0x01, // sound_33_small_potion
+	0x01, // sound_34
+	0x01, // sound_35_cutscene_8_9
+	0x01, // sound_36_out_of_time
+	0x01, // sound_37_victory
+	0x01, // sound_38_blink
+	0x00, // sound_39_low_weight
+	0x01, // sound_40_cutscene_12_short_time
+	0x01, // sound_41_end_level_music
+	0x01, // sound_42
+	0x01, // sound_43_victory_Jaffar
+	0x87, // sound_44_skel_alive
+	0x8C, // sound_45_jump_through_mirror
+	0x0F, // sound_46_chomped
+	0x10, // sound_47_chomper
+	0x19, // sound_48_spiked
+	0x16, // sound_49_spikes
+	0x01, // sound_50_story_2_princess
+	0x00, // sound_51_princess_door_opening
+	0x01, // sound_52_story_4_Jaffar_leaves
+	0x01, // sound_53_story_3_Jaffar_comes
+	0x01, // sound_54_intro_music
+	0x01, // sound_55_story_1_absence
+	0x01, // sound_56_ending_music
+	0x00
 };
 byte sound_pcspeaker_exists[] = {
-	1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1,
-	1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-	1, 1, 1, 0
+	1, // sound_0_fell_to_death
+	0, // sound_1_falling
+	1, // sound_2_tile_crashing
+	1, // sound_3_button_pressed
+	1, // sound_4_gate_closing
+	1, // sound_5_gate_opening
+	1, // sound_6_gate_closing_fast
+	1, // sound_7_gate_stop
+	1, // sound_8_bumped
+	1, // sound_9_grab
+	1, // sound_10_sword_vs_sword
+	0, // sound_11_sword_moving
+	1, // sound_12_guard_hurt
+	1, // sound_13_kid_hurt
+	1, // sound_14_leveldoor_closing
+	1, // sound_15_leveldoor_sliding
+	1, // sound_16_medium_land
+	1, // sound_17_soft_land
+	1, // sound_18_drink
+	0, // sound_19_draw_sword
+	0, // sound_20_loose_shake_1
+	0, // sound_21_loose_shake_2
+	0, // sound_22_loose_shake_3
+	1, // sound_23_footstep
+	1, // sound_24_death_regular
+	1, // sound_25_presentation
+	1, // sound_26_embrace
+	1, // sound_27_cutscene_2_4_6_12
+	1, // sound_28_death_in_fight
+	1, // sound_29_meet_Jaffar
+	1, // sound_30_big_potion
+	1, // sound_31
+	1, // sound_32_shadow_music
+	1, // sound_33_small_potion
+	1, // sound_34
+	1, // sound_35_cutscene_8_9
+	1, // sound_36_out_of_time
+	1, // sound_37_victory
+	1, // sound_38_blink
+	1, // sound_39_low_weight
+	1, // sound_40_cutscene_12_short_time
+	1, // sound_41_end_level_music
+	1, // sound_42
+	1, // sound_43_victory_Jaffar
+	1, // sound_44_skel_alive
+	1, // sound_45_jump_through_mirror
+	1, // sound_46_chomped
+	1, // sound_47_chomper
+	1, // sound_48_spiked
+	1, // sound_49_spikes
+	1, // sound_50_story_2_princess
+	1, // sound_51_princess_door_opening
+	1, // sound_52_story_4_Jaffar_leaves
+	1, // sound_53_story_3_Jaffar_comes
+	1, // sound_54_intro_music
+	1, // sound_55_story_1_absence
+	1, // sound_56_ending_music
+	0
 };
+
+void fix_sound_priorities() {
+	// Change values to match those in PoP 1.3.
+
+	// The "spiked" sound didn't interrupt the normal spikes sound when the prince ran into spikes.
+	sound_interruptible[sound_49_spikes] = 1;
+	sound_prio_table[sound_48_spiked] = 0x15; // moved above spikes
+
+	// With PoP 1.3 sounds, the "guard hurt" sound didn't play when you hit a guard directly after parrying.
+	sound_prio_table[sound_10_sword_vs_sword] = 0x0D; // moved below hit_user/hit_guard
+}
 
 // seg000:12C5
 void __pascal far play_sound(int sound_id) {
@@ -1640,9 +1770,7 @@ const rect_type rect_titles = {106,24,195,296};
 
 // seg000:17E6
 void __pascal far show_title() {
-	word textcolor;
 	load_opt_sounds(sound_50_story_2_princess, sound_55_story_1_absence); // main theme, story, princess door
-	textcolor = get_text_color(15, color_15_brightwhite, 0x800);
 	dont_reset_time = 0;
 	if(offscreen_surface) free_surface(offscreen_surface); // missing in original
 	offscreen_surface = make_offscreen_buffer(&screen_rect);
@@ -1651,41 +1779,41 @@ void __pascal far show_title() {
 	idle(); // modified
 	do_paused();
 
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
 	fade_in_2(offscreen_surface, 0x1000); //STUB
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &screen_rect, &screen_rect, blitters_0_no_transp);
 	current_sound = sound_54_intro_music; // added
 	play_sound_from_buffer(sound_pointers[sound_54_intro_music]); // main theme
 	start_timer(timer_0, 0x82);
-	draw_image_2(1 /*Broderbund Software presents*/, chtab_title50, 96, 106, blitters_0_no_transp);
+	draw_full_image(TITLE_PRESENTS);
 	do_wait(timer_0);
 
 	start_timer(timer_0, 0xCD);
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect_titles, &rect_titles, blitters_0_no_transp);
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
 	do_wait(timer_0);
 
 	start_timer(timer_0, 0x41);
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect_titles, &rect_titles, blitters_0_no_transp);
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
-	draw_image_2(2 /*a game by Jordan Mechner*/, chtab_title50, 96, 122, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
+	draw_full_image(TITLE_GAME);
 	do_wait(timer_0);
 
 	start_timer(timer_0, 0x10E);
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect_titles, &rect_titles, blitters_0_no_transp);
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
 	do_wait(timer_0);
 
 	start_timer(timer_0, 0xEB);
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect_titles, &rect_titles, blitters_0_no_transp);
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
-	draw_image_2(3 /*Prince Of Persia*/, chtab_title50, 24, 107, blitters_10h_transp);
-	draw_image_2(4 /*Copyright 1990 Jordan Mechner*/, chtab_title50, 48, 184, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
+	draw_full_image(TITLE_POP);
+	draw_full_image(TITLE_MECHNER);
 	do_wait(timer_0);
 
 	method_1_blit_rect(onscreen_surface_, offscreen_surface, &rect_titles, &rect_titles, blitters_0_no_transp);
-	draw_image_2(0 /*story frame*/, chtab_title40, 0, 0, blitters_0_no_transp);
-	draw_image_2(1 /*In the Sultan's absence*/, chtab_title40, 24, 25, textcolor);
+	draw_full_image(STORY_FRAME);
+	draw_full_image(STORY_ABSENCE);
 	current_target_surface = onscreen_surface_;
 	while (check_sound_playing()) {
 		idle();
@@ -1703,12 +1831,12 @@ void __pascal far show_title() {
 
 	load_title_images(1);
 	current_target_surface = offscreen_surface;
-	draw_image_2(0 /*story frame*/, chtab_title40, 0, 0, blitters_0_no_transp);
-	draw_image_2(2 /*Marry Jaffar*/, chtab_title40, 24, 25, textcolor);
+	draw_full_image(STORY_FRAME);
+	draw_full_image(STORY_MARRY);
 	fade_in_2(offscreen_surface, 0x800);
-	draw_image_2(0 /*main title image*/, chtab_title50, 0, 0, blitters_0_no_transp);
-	draw_image_2(3 /*Prince Of Persia*/, chtab_title50, 24, 107, blitters_10h_transp);
-	draw_image_2(4 /*Copyright 1990 Jordan Mechner*/, chtab_title50, 48, 184, blitters_0_no_transp);
+	draw_full_image(TITLE_MAIN);
+	draw_full_image(TITLE_POP);
+	draw_full_image(TITLE_MECHNER);
 	while (check_sound_playing()) {
 		idle();
 		do_paused();
@@ -1716,13 +1844,13 @@ void __pascal far show_title() {
 	}
 	transition_ltr();
 	pop_wait(timer_0, 0x78);
-	draw_image_2(0 /*story frame*/, chtab_title40, 0, 0, blitters_0_no_transp);
-	draw_image_2(4 /*credits*/, chtab_title40, 24, 26, textcolor);
+	draw_full_image(STORY_FRAME);
+	draw_full_image(STORY_CREDITS);
 	transition_ltr();
 	pop_wait(timer_0, 0x168);
 	if (hof_count) {
-		draw_image_2(0 /*story frame*/, chtab_title40, 0, 0, blitters_0_no_transp);
-		draw_image_2(3 /*Prince Of Persia*/, chtab_title50, 24, 24, blitters_10h_transp);
+		draw_full_image(STORY_FRAME);
+		draw_full_image(HOF_POP);
 		show_hof();
 		transition_ltr();
 		pop_wait(timer_0, 0xF0);
@@ -1795,17 +1923,26 @@ void __pascal far release_title_images() {
 }
 
 // seg000:1C3A
-void __pascal far draw_image_2(int id, chtab_type* chtab_ptr, int xpos, int ypos, int blit) {
-	image_type* source;
+void __pascal far draw_full_image(enum full_image_id id) {
 	image_type* decoded_image;
-	image_type* mask;
-	mask = NULL;
-	if (NULL == chtab_ptr) return;
-	source = chtab_ptr->images[id];
-	decoded_image = source;
-	if (blit != blitters_0_no_transp && blit != blitters_10h_transp) {
+	image_type* mask = NULL;
+	int xpos, ypos, blit;
+
+	if (id >= MAX_FULL_IMAGES) return;
+	if (NULL == *full_image[id].chtab) return;
+	decoded_image = (*full_image[id].chtab)->images[full_image[id].id];
+	blit = full_image[id].blitter;
+	xpos = full_image[id].xpos;
+	ypos = full_image[id].ypos;
+
+	switch (blit) {
+	case blitters_white:
+		blit = get_text_color(15, color_15_brightwhite, 0x800);
+		/* fall through */
+	default:
 		method_3_blit_mono(decoded_image, xpos, ypos, blitters_0_no_transp, blit);
-	} else if (blit == blitters_10h_transp) {
+		break;
+	case blitters_10h_transp:
 		if (graphics_mode == gmCga || graphics_mode == gmHgaHerc) {
 			//...
 		} else {
@@ -1815,8 +1952,10 @@ void __pascal far draw_image_2(int id, chtab_type* chtab_ptr, int xpos, int ypos
 		if (graphics_mode == gmCga || graphics_mode == gmHgaHerc) {
 			free_far(mask);
 		}
-	} else {
+		break;
+	case blitters_0_no_transp:
 		method_6_blit_img_to_scr(decoded_image, xpos, ypos, blit);
+		break;
 	}
 }
 
@@ -1832,7 +1971,7 @@ const char* get_save_path(char* custom_path_buffer, size_t max_len) {
 		return save_file;
 	}
 	// if playing a custom levelset, try to use the mod folder
-	snprintf(custom_path_buffer, max_len, "%s/%s", mod_data_path, save_file /*PRINCE.SAV*/ );
+	snprintf_check(custom_path_buffer, max_len, "%s/%s", mod_data_path, save_file /*PRINCE.SAV*/ );
 	return custom_path_buffer;
 }
 
@@ -2111,7 +2250,7 @@ const char* splash_text_2 =
 		"Mods also work with SDLPoP.\n"
 		"\n"
 		"For more information, read doc/Readme.txt.\n"
-		"Questions? Visit http://forum.princed.org\n"
+		"Questions? Visit https://forum.princed.org\n"
 		"\n"
 		"Press any key to continue...";
 

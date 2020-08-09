@@ -13,9 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
@@ -28,7 +28,6 @@ The authors of this program may be contacted at http://forum.princed.org
 #else
 #include "dirent.h"
 #endif
-
 
 // Most functions in this file are different from those in the original game.
 
@@ -56,7 +55,7 @@ void find_exe_dir() {
 		NameFromLock( GetProgramDir(), exe_dir, sizeof(exe_dir) );
 	}
 #else
-	strncpy(exe_dir, g_argv[0], sizeof(exe_dir));
+	snprintf_check(exe_dir, sizeof(exe_dir), "%s", g_argv[0]);
 	char* last_slash = NULL;
 	char* pos = exe_dir;
 	for (char c = *pos; c != '\0'; c = *(++pos)) {
@@ -68,7 +67,6 @@ void find_exe_dir() {
 		*last_slash = '\0';
 	}
 #endif
-//printf("'%s'\n",exe_dir);
 	found_exe_dir = true;
 }
 
@@ -83,7 +81,7 @@ const char* locate_file_(const char* filename, char* path_buffer, int buffer_siz
 		// If failed, it may be that SDLPoP is being run from the wrong different working directory.
 		// We can try to rescue the situation by loading from the directory of the executable.
 		find_exe_dir();
-        snprintf(path_buffer, buffer_size, "%s/%s", exe_dir, filename);
+        snprintf_check(path_buffer, buffer_size, "%s/%s", exe_dir, filename);
         return (const char*) path_buffer;
 	}
 }
@@ -135,7 +133,7 @@ struct directory_listing_type {
 directory_listing_type* create_directory_listing_and_find_first_file(const char* directory, const char* extension) {
 	directory_listing_type* directory_listing = calloc(1, sizeof(directory_listing_type));
 	char search_pattern[POP_MAX_PATH];
-	snprintf(search_pattern, POP_MAX_PATH, "%s/*.%s", directory, extension);
+	snprintf_check(search_pattern, POP_MAX_PATH, "%s/*.%s", directory, extension);
 	WCHAR* search_pattern_UTF16 = WIN_UTF8ToString(search_pattern);
 	directory_listing->search_handle = FindFirstFileW( search_pattern_UTF16, &directory_listing->find_data );
 	SDL_free(search_pattern_UTF16);
@@ -343,13 +341,13 @@ static FILE* open_dat_from_root_or_data_dir(const char* filename) {
 	// if failed, try if the DAT file can be opened in the data/ directory, instead of the main folder
 	if (fp == NULL) {
 		char data_path[POP_MAX_PATH];
-		snprintf(data_path, sizeof(data_path), "data/%s", filename);
+		snprintf_check(data_path, sizeof(data_path), "data/%s", filename);
 
         if (!file_exists(data_path)) {
             find_exe_dir();
-            snprintf(data_path, sizeof(data_path), "%s/data/%s", exe_dir, filename);
+            snprintf_check(data_path, sizeof(data_path), "%s/data/%s", exe_dir, filename);
         }
-printf("[open_dat_from_root_or_data_dir]'%s'\n",data_path);
+
 		// verify that this is a regular file and not a directory (otherwise, don't open)
 		struct stat path_stat;
 		stat(data_path, &path_stat);
@@ -363,7 +361,6 @@ printf("[open_dat_from_root_or_data_dir]'%s'\n",data_path);
 // seg009:0F58
 dat_type *__pascal open_dat(const char *filename,int drive) {
 	FILE* fp = NULL;
-printf("[open_dat]'%s'\n",filename);
 	if (!use_custom_levelset) {
 		fp = open_dat_from_root_or_data_dir(filename);
 	}
@@ -371,8 +368,7 @@ printf("[open_dat]'%s'\n",filename);
 		if (!skip_mod_data_files) {
 			char filename_mod[POP_MAX_PATH];
 			// before checking the root directory, first try mods/MODNAME/
-			snprintf(filename_mod, sizeof(filename_mod), "%s/%s", mod_data_path, filename);
-//printf("[open_dat]'%s'\n",filename_mod);
+			snprintf_check(filename_mod, sizeof(filename_mod), "%s/%s", mod_data_path, filename);
 			fp = fopen(filename_mod, "rb");
 		}
 		if (fp == NULL && !skip_normal_data_files) {
@@ -383,7 +379,7 @@ printf("[open_dat]'%s'\n",filename);
 	dat_table_type* dat_table = NULL;
 
 	dat_type* pointer = (dat_type*) calloc(1, sizeof(dat_type));
-	strncpy(pointer->filename, filename, sizeof(pointer->filename));
+	snprintf_check(pointer->filename, sizeof(pointer->filename), "%s", filename);
 	pointer->next_dat = dat_chain_ptr;
 	dat_chain_ptr = pointer;
 
@@ -814,6 +810,10 @@ int __pascal far set_joy_mode() {
 	if (SDL_NumJoysticks() < 1) {
 		is_joyst_mode = 0;
 	} else {
+		if (gamecontrollerdb_file[0] != '\0') {
+			SDL_GameControllerAddMappingsFromFile(gamecontrollerdb_file);
+		}
+
 		if (SDL_IsGameController(0)) {
 			sdl_controller_ = SDL_GameControllerOpen(0);
 			if (sdl_controller_ == NULL) {
@@ -847,10 +847,8 @@ surface_type far *__pascal make_offscreen_buffer(const rect_type far *rect) {
 #ifndef USE_ALPHA
 	// Bit order matches onscreen buffer, good for fading.
 	return SDL_CreateRGBSurface(0, rect->right, rect->bottom, 24, Rmsk, Gmsk, Bmsk, 0); //RGB888 (little endian)
-	//return SDL_CreateRGBSurface(0, rect->right, rect->bottom, 24, 0xFF, 0xFF<<8, 0xFF<<16, 0); //RGB888 (little endian)
 #else
 	return SDL_CreateRGBSurface(0, rect->right, rect->bottom, 32, Rmsk, Gmsk, Bmsk, Amsk);
-	//return SDL_CreateRGBSurface(0, rect->right, rect->bottom, 32, 0xFF, 0xFF<<8, 0xFF<<16, 0xFF<<24);
 #endif
 	//return surface;
 }
@@ -1631,11 +1629,8 @@ peel_type* __pascal far read_peel_from_screen(const rect_type far *rect) {
 #ifndef USE_ALPHA
 	SDL_Surface* peel_surface = SDL_CreateRGBSurface(0, rect->right - rect->left, rect->bottom - rect->top,
 	                                                 24, Rmsk, Gmsk, Bmsk, 0);
-	//SDL_Surface* peel_surface = SDL_CreateRGBSurface(0, rect->right - rect->left, rect->bottom - rect->top,
-	//                                                 24, 0xFF, 0xFF<<8, 0xFF<<16, 0);
 #else
 	SDL_Surface* peel_surface = SDL_CreateRGBSurface(0, rect->right - rect->left, rect->bottom - rect->top, 32, Rmsk, Gmsk, Bmsk, Amsk);
-	//SDL_Surface* peel_surface = SDL_CreateRGBSurface(0, rect->right - rect->left, rect->bottom - rect->top, 32, 0xFF, 0xFF<<8, 0xFF<<16, 0xFF<<24);
 #endif
 	if (peel_surface == NULL) {
 		sdlperror("SDL_CreateRGBSurface");
@@ -2014,11 +2009,11 @@ sound_buffer_type* load_sound(int index) {
 				char filename[POP_MAX_PATH];
 				if (!skip_mod_data_files) {
 					// before checking the root directory, first try mods/MODNAME/
-					snprintf(filename, sizeof(filename), "%s/music/%s.ogg", mod_data_path, sound_name(index));
+					snprintf_check(filename, sizeof(filename), "%s/music/%s.ogg", mod_data_path, sound_name(index));
 					fp = fopen(filename, "rb");
 				}
 				if (fp == NULL && !skip_normal_data_files) {
-					snprintf(filename, sizeof(filename), "data/music/%s.ogg", sound_name(index));
+					snprintf_check(filename, sizeof(filename), "data/music/%s.ogg", sound_name(index));
 					fp = fopen(locate_file(filename), "rb");
 				}
 				if (fp == NULL) {
@@ -2280,8 +2275,6 @@ void init_overlay() {
 	if (!initialized) {
 		overlay_surface = SDL_CreateRGBSurface(0, 320, 200, 32, Rmsk, Gmsk, Bmsk, Amsk) ;
 		merged_surface = SDL_CreateRGBSurface(0, 320, 200, 24, Rmsk, Gmsk, Bmsk, 0) ;
-		//overlay_surface = SDL_CreateRGBSurface(0, 320, 200, 32, 0xFF, 0xFF << 8, 0xFF << 16, 0xFF << 24) ;
-		//merged_surface = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0) ;
 		initialized = true;
 	}
 }
@@ -2295,7 +2288,6 @@ void init_scaling() {
 	if (scaling_type == 1) {
 		if (!is_renderer_targettexture_supported && onscreen_surface_2x == NULL) {
 			onscreen_surface_2x = SDL_CreateRGBSurface(0, 320*2, 200*2, 24, Rmsk, Gmsk, Bmsk, 0) ;
-			//onscreen_surface_2x = SDL_CreateRGBSurface(0, 320*2, 200*2, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0) ;
 		}
 		if (texture_fuzzy == NULL) {
 			SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "1");
@@ -2348,6 +2340,20 @@ void __pascal far set_gr_mode(byte grmode) {
 		pop_window_height = 480;
 	}
 
+#if _WIN32
+	// Tell Windows that the application is DPI aware, to prevent unwanted bitmap stretching.
+	// SetProcessDPIAware() is only available on Windows Vista and later, so we need to load it dynamically.
+	BOOL WINAPI (*SetProcessDPIAware)();
+	HMODULE user32dll = LoadLibraryA("User32.dll");
+	if (user32dll) {
+		SetProcessDPIAware = GetProcAddress(user32dll, "SetProcessDPIAware");
+		if (SetProcessDPIAware) {
+			SetProcessDPIAware();
+		}
+		FreeLibrary(user32dll);
+	}
+#endif
+
 #ifdef USE_REPLAY
 	if (!is_validate_mode) // run without a window if validating a replay
 #endif
@@ -2357,6 +2363,9 @@ void __pascal far set_gr_mode(byte grmode) {
 	// Make absolutely sure that VSync will be off, to prevent timer issues.
 	SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
 	renderer_ = SDL_CreateRenderer(window_, -1 , SDL_RENDERER_ACCELERATED | SDL_RENDERER_TARGETTEXTURE);
+	if (!renderer_) {
+		renderer_ = SDL_CreateRenderer(window_, -1 , SDL_RENDERER_SOFTWARE | SDL_RENDERER_TARGETTEXTURE);
+	}
 	SDL_RendererInfo renderer_info;
 	if (SDL_GetRendererInfo(renderer_, &renderer_info) == 0) {
 		if (renderer_info.flags & SDL_RENDERER_TARGETTEXTURE) {
@@ -2388,7 +2397,6 @@ void __pascal far set_gr_mode(byte grmode) {
 	 * The function handling the screen updates is update_screen()
 	 * */
 	onscreen_surface_ = SDL_CreateRGBSurface(0, 320, 200, 24, Rmsk, Gmsk, Bmsk, 0);
-	//onscreen_surface_ = SDL_CreateRGBSurface(0, 320, 200, 24, 0xFF, 0xFF << 8, 0xFF << 16, 0);
 	if (onscreen_surface_ == NULL) {
 		sdlperror("SDL_CreateRGBSurface");
 		quit(1);
@@ -2589,7 +2597,7 @@ void load_from_opendats_metadata(int resource_id, const char* extension, FILE** 
 			if (len >= 5 && filename_no_ext[len-4] == '.') {
 				filename_no_ext[len-4] = '\0'; // terminate, so ".DAT" is deleted from the filename
 			}
-			snprintf(image_filename,sizeof(image_filename),"data/%s/res%d.%s",filename_no_ext, resource_id, extension);
+			snprintf_check(image_filename,sizeof(image_filename),"data/%s/res%d.%s",filename_no_ext, resource_id, extension);
 			if (!use_custom_levelset) {
 				//printf("loading (binary) %s",image_filename);
 				fp = fopen(locate_file(image_filename), "rb");
@@ -2598,7 +2606,7 @@ void load_from_opendats_metadata(int resource_id, const char* extension, FILE** 
 				if (!skip_mod_data_files) {
 					char image_filename_mod[POP_MAX_PATH];
 					// before checking data/, first try mods/MODNAME/data/
-					snprintf(image_filename_mod, sizeof(image_filename_mod), "%s/%s", mod_data_path, image_filename);
+					snprintf_check(image_filename_mod, sizeof(image_filename_mod), "%s/%s", mod_data_path, image_filename);
 					//printf("loading (binary) %s",image_filename_mod);
 					fp = fopen(locate_file(image_filename_mod), "rb");
 				}
@@ -2887,7 +2895,6 @@ void blit_xor(SDL_Surface* target_surface, SDL_Rect* dest_rect, SDL_Surface* ima
 		quit(1);
 	}
 	SDL_Surface* helper_surface = SDL_CreateRGBSurface(0, dest_rect->w, dest_rect->h, 24, Rmsk, Gmsk, Bmsk, 0);
-	//SDL_Surface* helper_surface = SDL_CreateRGBSurface(0, dest_rect->w, dest_rect->h, 24, 0xFF, 0xFF<<8, 0xFF<<16, 0);
 	if (helper_surface == NULL) {
 		sdlperror("SDL_CreateRGBSurface");
 		quit(1);
@@ -3089,7 +3096,7 @@ void process_events() {
 			{
 				int modifier = event.key.keysym.mod;
 				int scancode = event.key.keysym.scancode;
-//printf("event.key.keysym.scancode=0x%08x\n",scancode);
+
 				// Handle these separately, so they won't interrupt things that are usually interrupted by a keypress. (pause, cutscene)
 #ifdef USE_SCREENSHOT
 				if (scancode == SDL_SCANCODE_F12) {
@@ -3189,7 +3196,6 @@ void process_events() {
 #endif
 				break;
 			case SDL_CONTROLLERAXISMOTION:
-//printf("SDL_CONTROLLERAXISMOTION %d (val=%d)\n",event.caxis.axis,event.caxis.value);
 				if (event.caxis.axis < 6) {
 					joy_axis[event.caxis.axis] = event.caxis.value;
 
@@ -3201,7 +3207,6 @@ void process_events() {
 #endif
 				}
 				break;
-
 			case SDL_CONTROLLERBUTTONDOWN:
 #ifdef USE_AUTO_INPUT_MODE
 				if (!is_joyst_mode) {
@@ -3209,18 +3214,17 @@ void process_events() {
 					is_keyboard_mode = 0;
 				}
 #endif
-//printf("[SDL_CONTROLLERBUTTONDOWN]event.cbutton.button=0x%08x\n",event.cbutton.button);
 				switch (event.cbutton.button)
 				{
 					case SDL_CONTROLLER_BUTTON_DPAD_LEFT:  joy_hat_states[0] = -1; break; // left
-					case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joy_hat_states[0] =  1; break; // right
+					case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: joy_hat_states[0] = 1;  break; // right
 					case SDL_CONTROLLER_BUTTON_DPAD_UP:    joy_hat_states[1] = -1; break; // up
-					case SDL_CONTROLLER_BUTTON_DPAD_DOWN:  joy_hat_states[1] =  1; break; // down
+					case SDL_CONTROLLER_BUTTON_DPAD_DOWN:  joy_hat_states[1] = 1;  break; // down
 
-					case SDL_CONTROLLER_BUTTON_A:          joy_AY_buttons_state =  1; break; /*** A (down) ***/
+					case SDL_CONTROLLER_BUTTON_A:          joy_AY_buttons_state = 1;  break; /*** A (down) ***/
 					case SDL_CONTROLLER_BUTTON_Y:          joy_AY_buttons_state = -1; break; /*** Y (up) ***/
-					case SDL_CONTROLLER_BUTTON_X:          joy_X_button_state   =  1; break; /*** X (shift) ***/
-					case SDL_CONTROLLER_BUTTON_B:          joy_B_button_state   =  1; break; /*** B (unused) ***/
+					case SDL_CONTROLLER_BUTTON_X:          joy_X_button_state = 1;    break; /*** X (shift) ***/
+					case SDL_CONTROLLER_BUTTON_B:          joy_B_button_state = 1;    break; /*** B (unused) ***/
 
 					case SDL_CONTROLLER_BUTTON_START:
 					case SDL_CONTROLLER_BUTTON_BACK:
@@ -3235,7 +3239,6 @@ void process_events() {
 				}
 				break;
 			case SDL_CONTROLLERBUTTONUP:
-//printf("[SDL_CONTROLLERBUTTONUP]event.cbutton.button=0x%08x\n",event.cbutton.button);
 				switch (event.cbutton.button)
 				{
 					case SDL_CONTROLLER_BUTTON_DPAD_LEFT:  joy_hat_states[0] = 0; break; // left
@@ -3245,8 +3248,8 @@ void process_events() {
 
 					case SDL_CONTROLLER_BUTTON_A:          joy_AY_buttons_state = 0; break; /*** A (down) ***/
 					case SDL_CONTROLLER_BUTTON_Y:          joy_AY_buttons_state = 0; break; /*** Y (up) ***/
-					case SDL_CONTROLLER_BUTTON_X:          joy_X_button_state   = 0; break; /*** X (shift) ***/
-					case SDL_CONTROLLER_BUTTON_B:          joy_B_button_state   = 0; break; /*** B (unused) ***/
+					case SDL_CONTROLLER_BUTTON_X:          joy_X_button_state = 0;   break; /*** X (shift) ***/
+					case SDL_CONTROLLER_BUTTON_B:          joy_B_button_state = 0;   break; /*** B (unused) ***/
 
 					default: break;
 				}
@@ -3259,10 +3262,7 @@ void process_events() {
 				if (!using_sdl_joystick_interface) {
 					break;
 				}
-//printf("[SDL_JOY..]event.type=0x%08x\n",event.type);
-
 				if (event.type == SDL_JOYAXISMOTION) {
-//printf("[SDL_JOYAXISMOTION]event.jaxis.axis=0x%08x\n",event.jaxis.axis);
 					if (event.jaxis.axis == SDL_JOYSTICK_X_AXIS) {
 						joy_axis[SDL_CONTROLLER_AXIS_LEFTX] = event.jaxis.value;
 					}
@@ -3271,7 +3271,6 @@ void process_events() {
 					}
 					// Disregard SDL_JOYAXISMOTION events within joystick 'dead zone'
 					int joy_x = joy_axis[SDL_CONTROLLER_AXIS_LEFTX];
-					//int joy_y = joy_axis[SDL_CONTROLLER_AXIS_LEFTX];
 					int joy_y = joy_axis[SDL_CONTROLLER_AXIS_LEFTY];
 					if ((dword)(joy_x*joy_x) + (dword)(joy_y*joy_y) < (dword)(joystick_threshold*joystick_threshold)) {
 						break;
@@ -3283,15 +3282,13 @@ void process_events() {
 					is_keyboard_mode = 0;
 				}
 #endif
-//printf("event.jbutton.button=0x%08x\n",event.jbutton.button);
-
 				if (event.type == SDL_JOYBUTTONDOWN) {
 					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = -1; // Y (up)
-					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state   = -1; // X (shift)
+					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = -1;   // X (shift)
 				}
 				else if (event.type == SDL_JOYBUTTONUP) {
 					if      (event.jbutton.button == SDL_JOYSTICK_BUTTON_Y)   joy_AY_buttons_state = 0;  // Y (up)
-					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state   = 0;  // X (shift)
+					else if (event.jbutton.button == SDL_JOYSTICK_BUTTON_X)   joy_X_button_state = 0;    // X (shift)
 				}
 				break;
 
@@ -3314,7 +3311,7 @@ void process_events() {
 			}
 */
 				switch (event.window.event) {
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__MORPHOS__)
 					case SDL_WINDOWEVENT_MINIMIZED: /* pause game */
 						if (!is_menu_shown) {
 							last_key_scancode = SDL_SCANCODE_BACKSPACE;

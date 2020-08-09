@@ -13,9 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 // SEG000.C
@@ -59,7 +59,7 @@ void __pascal far gen_palace_wall_colors();
 void __pascal far show_title();
 void __pascal far transition_ltr();
 void __pascal far release_title_images();
-void __pascal far draw_image_2(int id,chtab_type* chtab_ptr,int xpos,int ypos,int blit);
+void __pascal far draw_full_image(enum full_image_id id);
 void __pascal far load_kid_sprite();
 void __pascal far save_game();
 short __pascal far load_game();

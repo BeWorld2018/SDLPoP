@@ -13,9 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
@@ -117,7 +117,6 @@ int active_settings_subsection = 0;
 int highlighted_settings_subsection = 0;
 int scroll_position = 0;
 int menu_control_y;
-//int menu_control_scroll_y;
 int menu_control_x;
 int menu_control_back;
 
@@ -263,6 +262,7 @@ enum setting_ids {
 	SETTING_VICTORY_STOPS_TIME_LEVEL,
 	SETTING_WIN_LEVEL,
 	SETTING_WIN_ROOM,
+	SETTING_LOOSE_FLOOR_DELAY,
 	SETTING_LEVEL_SETTINGS,
 	SETTING_LEVEL_TYPE,
 	SETTING_LEVEL_COLOR,
@@ -841,6 +841,10 @@ setting_type mods_settings[] = {
 				.linked = &custom_saved.win_room, .number_type = SETTING_BYTE, .min = 1, .max = 24,
 				.text = "Room where you can win",
 				.explanation = "Level and room where you can win the game.\n(default: level = 14, room = 5)"},
+		{.id = SETTING_LOOSE_FLOOR_DELAY, .style = SETTING_STYLE_NUMBER, .required = &use_custom_options,
+				.linked = &custom_saved.loose_floor_delay, .number_type = SETTING_BYTE, .min = 0, .max = 127,
+				.text = "Loose floor delay",
+				.explanation = "Number of seconds to wait before a loose floor falls.\n(default = 0.92)"},
 };
 
 NAMES_LIST(level_type_setting_names, { "Dungeon", "Palace", });
@@ -1352,7 +1356,8 @@ char* print_setting_value_(setting_type* setting, int value, char* buffer, size_
 	if (!has_name) {
 		if (setting->id == SETTING_START_TICKS_LEFT ||
 				setting->id == SETTING_SHIFT_L_REDUCED_TICKS ||
-				setting->id == SETTING_MOUSE_DELAY
+				setting->id == SETTING_MOUSE_DELAY ||
+				setting->id == SETTING_LOOSE_FLOOR_DELAY
 		) {
 			float seconds = (float)value * (1.0f/12.0f);
 			snprintf(buffer, buffer_size, "%.2f", seconds);
@@ -2038,12 +2043,16 @@ void calculate_exe_crc() {
 		FILE* exe_file = fopen(g_argv[0], "rb");
 		if (exe_file != NULL) {
 			fseek(exe_file, 0, SEEK_END);
-			int size = ftell(exe_file);
+			size_t size = ftell(exe_file);
 			fseek(exe_file, 0, SEEK_SET);
 			if (size > 0) {
-				byte* buffer = malloc((size_t)size);
-				fread(buffer, 1, (size_t)size, exe_file);
-				exe_crc = crc32c(buffer, (dword)size);
+				byte* buffer = malloc(size);
+				size_t bytes = fread(buffer, 1, size, exe_file);
+				if (bytes != size) {
+					fprintf(stderr, "exec changed size during CRC32!?\n");
+					size = bytes;
+				}
+				exe_crc = crc32c(buffer, size);
 				free(buffer);
 			}
 			fclose(exe_file);
@@ -2053,7 +2062,6 @@ void calculate_exe_crc() {
 
 void save_ingame_settings() {
 	SDL_RWops* rw = SDL_RWFromFile(locate_file("SDLPoP.cfg"), "wb");
-
 	if (rw != NULL) {
 		calculate_exe_crc();
 		SDL_RWwrite(rw, &exe_crc, sizeof(exe_crc), 1);
@@ -2072,7 +2080,6 @@ void load_ingame_settings() {
 	struct stat st_ini, st_cfg;
 	const char* cfg_filename = locate_file("SDLPoP.cfg");
 	const char* ini_filename = locate_file("SDLPoP.ini");
-
 	if (stat( cfg_filename, &st_cfg ) == 0 && stat( ini_filename, &st_ini ) == 0) {
 		if (st_ini.st_mtime > st_cfg.st_mtime ) {
 			// SDLPoP.ini is newer than SDLPoP.cfg, so just go with the .ini configuration

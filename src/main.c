@@ -13,12 +13,17 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
+
+#ifdef __MORPHOS__
+unsigned long __stack = 1000000;
+static const char *version __attribute__((used)) = "$VER: SDLPoP 1.2.0 (9.8.2020) port by BeWorld";
+#endif
 
 int main(int argc, char *argv[])
 {

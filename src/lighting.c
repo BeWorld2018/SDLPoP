@@ -13,9 +13,9 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-The authors of this program may be contacted at http://forum.princed.org
+The authors of this program may be contacted at https://forum.princed.org
 */
 
 #include "common.h"
@@ -40,7 +40,6 @@ void init_lighting() {
 	}
 
 	screen_overlay = SDL_CreateRGBSurface(0, 320, 192, 32, Rmsk, Gmsk, Bmsk, Amsk);
-	//screen_overlay = SDL_CreateRGBSurface(0, 320, 192, 32, 0xFF << 0, 0xFF << 8, 0xFF << 16, 0xFF << 24);
 	if (screen_overlay == NULL) {
 		sdlperror("SDL_CreateRGBSurface (screen_overlay)");
 		enable_lighting = 0;
