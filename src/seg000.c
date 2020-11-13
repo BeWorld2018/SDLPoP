@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2019  Dávid Nagy
+Copyright (C) 2013-2020  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -331,6 +331,13 @@ int quick_process(process_func_type process_func) {
 	process(ctrl1_up);
 	process(ctrl1_down);
 	process(ctrl1_shift2);
+	// replay recording state
+#ifdef USE_REPLAY
+	process(curr_tick);
+#endif
+#ifdef USE_COLORED_TORCHES
+	process(torch_colors);
+#endif
 #undef process
 	return ok;
 }
@@ -456,11 +463,13 @@ void check_quick_op() {
 		text_time_remaining = 24;
 	}
 	if (need_quick_load) {
+/*
 #ifdef USE_REPLAY
 		if (recording) {
 			stop_recording(); // quickloading would mess up the replay!
 		}
 #endif
+*/
 		if (quick_load()) {
 			display_text_bottom("QUICKLOAD");
 		} else {
@@ -632,7 +641,7 @@ int __pascal far process_key() {
 				SDL_TimerID timer;
 				timer = SDL_AddTimer(delay, temp_shift_release_callback, NULL);
 				if (timer == 0) {
-					sdlperror("SDL_AddTimer");
+					sdlperror("process_key: SDL_AddTimer");
 					quit(1);
 				}
 				if (current_level == 14) {
@@ -727,8 +736,10 @@ int __pascal far process_key() {
 				}
 			break;
 			case SDL_SCANCODE_K: // K --> kill guard cheat
-				guardhp_delta = -guardhp_curr;
-				Guard.alive = 0;
+				if (Guard.charid != charid_4_skeleton) {
+					guardhp_delta = -guardhp_curr;
+					Guard.alive = 0;
+				}
 			break;
 			case SDL_SCANCODE_I | WITH_SHIFT: // shift+I --> invert cheat
 				toggle_upside();
@@ -1978,27 +1989,26 @@ const char* get_save_path(char* custom_path_buffer, size_t max_len) {
 // seg000:1D45
 void __pascal far save_game() {
 	word success;
-	int handle;
+	FILE* handle;
 	success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
-	// no O_TRUNC
-	handle = open(save_path, O_WRONLY | O_CREAT | O_BINARY, 0600);
-	if (handle == -1) goto loc_1DB8;
-	if (write(handle, &rem_min, 2) == 2) goto loc_1DC9;
+	handle = fopen(save_path, "wb");
+	if (handle == NULL) goto loc_1DB8;
+	if (fwrite(&rem_min, 1, 2, handle) == 2) goto loc_1DC9;
 	loc_1D9B:
-	close(handle);
+	fclose(handle);
 	if (!success) {
-		unlink(save_path);
+		remove(save_path);
 	}
 	loc_1DB8:
 	if (!success) goto loc_1E18;
 	display_text_bottom("GAME SAVED");
 	goto loc_1E2E;
 	loc_1DC9:
-	if (write(handle, &rem_tick, 2) != 2) goto loc_1D9B;
-	if (write(handle, &current_level, 2) != 2) goto loc_1D9B;
-	if (write(handle, &hitp_beg_lev, 2) != 2) goto loc_1D9B;
+	if (fwrite(&rem_tick, 1, 2, handle) != 2) goto loc_1D9B;
+	if (fwrite(&current_level, 1, 2, handle) != 2) goto loc_1D9B;
+	if (fwrite(&hitp_beg_lev, 1, 2, handle) != 2) goto loc_1D9B;
 	success = 1;
 	goto loc_1D9B;
 	loc_1E18:
@@ -2010,22 +2020,22 @@ void __pascal far save_game() {
 
 // seg000:1E38
 short __pascal far load_game() {
-	int handle;
 	word success;
+	FILE* handle;
 	success = 0;
 	char custom_save_path[POP_MAX_PATH];
 	const char* save_path = get_save_path(custom_save_path, sizeof(custom_save_path));
-	handle = open(save_path, O_RDONLY | O_BINARY);
-	if (handle == -1) goto loc_1E99;
-	if (read(handle, &rem_min, 2) == 2) goto loc_1E9E;
+	handle = fopen(save_path, "rb");
+	if (handle == NULL) goto loc_1E99;
+	if (fread(&rem_min, 1, 2, handle) == 2) goto loc_1E9E;
 	loc_1E8E:
-	close(handle);
+	fclose(handle);
 	loc_1E99:
 	return success;
 	loc_1E9E:
-	if (read(handle, &rem_tick, 2) != 2) goto loc_1E8E;
-	if (read(handle, &start_level, 2) != 2) goto loc_1E8E;
-	if (read(handle, &hitp_beg_lev, 2) != 2) goto loc_1E8E;
+	if (fread(&rem_tick, 1, 2, handle) != 2) goto loc_1E8E;
+	if (fread(&start_level, 1, 2, handle) != 2) goto loc_1E8E;
+	if (fread(&hitp_beg_lev, 1, 2, handle) != 2) goto loc_1E8E;
 #ifdef USE_COPYPROT
 	if (enable_copyprot && custom->copyprot_level > 0) {
 		custom->copyprot_level = start_level;

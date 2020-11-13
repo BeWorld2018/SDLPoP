@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2019  Dávid Nagy
+Copyright (C) 2013-2020  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -1132,7 +1132,7 @@ void __pascal far draw_mob() {
 	if (curmob.room == drawn_room) {
 		if (curmob.y >= 210) return;
 	} else if (curmob.room == room_B) {
-		if (ABS(ypos) >= 18) return;
+		if (ABS((sbyte)ypos) >= 18) return;
 		curmob.y += 192;
 		ypos = curmob.y;
 	} else if (curmob.room == room_A) {

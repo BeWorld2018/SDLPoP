@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2019  Dávid Nagy
+Copyright (C) 2013-2020  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -515,7 +515,7 @@ void midi_callback(void *userdata, Uint8 *stream, int len) {
 			advance_us = advance_frames * ONE_SECOND_IN_US / mixing_freq; // recalculate, in case the rounding up increased this.
 			short* temp_buffer = malloc(advance_frames * 4);
 			OPL3_GenerateStream(&opl_chip, temp_buffer, advance_frames);
-			if (enable_music) {
+			if (is_sound_on && enable_music) {
 				for (int sample = 0; sample < advance_frames * 2; ++sample) {
 					((short*)stream)[sample] += temp_buffer[sample];
 				}

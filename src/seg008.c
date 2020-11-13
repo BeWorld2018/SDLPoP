@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2019  Dávid Nagy
+Copyright (C) 2013-2020  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -71,10 +71,6 @@ short drawn_col;
 byte tile_left;
 // data:4CCC
 byte modifier_left;
-
-#ifdef USE_COLORED_TORCHES
-byte torch_colors[24+1][30]; // indexed 1..24
-#endif
 
 // seg008:0006
 void __pascal far redraw_room() {
@@ -453,7 +449,7 @@ void __pascal far draw_tile_right() {
 			if (id) {
 				if (tile_left == tiles_5_stuck) {
 					blit = blitters_10h_transp;
-					if (curr_tile == tiles_0_empty || curr_tile == tiles_5_stuck) {
+					if (curr_tile == tiles_0_empty || curr_tile == tiles_5_stuck || !tile_is_floor(curr_tile)) {
 						id = 42; /*floor B*/
 					}
 				} else {
@@ -932,7 +928,7 @@ SDL_Surface* hflip(SDL_Surface* input) {
 	SDL_SetSurfacePalette(output, input->format->palette);
 	// The copied image will be overwritten anyway.
 	if (output == NULL) {
-		sdlperror("SDL_ConvertSurface");
+		sdlperror("hflip: SDL_ConvertSurface");
 		quit(1);
 	}
 
@@ -946,7 +942,7 @@ SDL_Surface* hflip(SDL_Surface* input) {
 		SDL_Rect srcrect = {source_x, 0, 1, height};
 		SDL_Rect dstrect = {target_x, 0, 1, height};
 		if (SDL_BlitSurface(input/*32*/, &srcrect, output, &dstrect) != 0) {
-			sdlperror("SDL_BlitSurface");
+			sdlperror("hflip: SDL_BlitSurface");
 			quit(1);
 		}
 	}
@@ -1138,6 +1134,11 @@ void __pascal far draw_gate_fore() {
 void __pascal far alter_mods_allrm() {
 	word tilepos;
 	word room;
+
+#ifdef USE_COLORED_TORCHES
+	memset(torch_colors, 0, sizeof(torch_colors));
+#endif
+
 	for (room = 1; room <= level.used_rooms; room++) {
 		get_room_address(room);
 		room_L = level.roomlinks[room-1].left;

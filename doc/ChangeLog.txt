@@ -540,9 +540,9 @@ FIXED: Fix priorities of sword and spike sounds. (As in PoP 1.3.)
 	The "spiked" sound didn't interrupt the normal spikes sound when the prince ran into spikes.
 	With PoP 1.3 sounds, the "guard hurt" sound didn't play when you hit a guard directly after parrying.
 
-(no release date yet)
+2020 August 20
 =================
-(upcoming version)
+(version 1.21)
 
 FIXED: Skeletons not on level 3 did not behave like skeletons.
 FIXED: Don't crash if the intro music is interrupted by Tab in PC Speaker mode.
@@ -552,6 +552,27 @@ DONE: Detect guard skill customizations in PRINCE.EXE. (Used in Illusions of Per
 FIXED: Don't draw the right edge of loose floors on the left side of a potion or sword.
 FIXED: A guard standing on a door top (with floor) should not become inactive.
 FIXED: Left jump (top-left) didn't work on some gamepads.
-FIXED: Replays were not working if there were no replay files in the replay folder.
+FIXED: Replaying from the command line did not work if there were no replay files in the replay folder.
 DONE: Added support for gamecontrollerdb.txt file.
 DONE: Detect changes of the shadow's starting positions and automatic moves in PRINCE.EXE.
+DONE: Added "Restart Game" to the pause menu, so now it's possible to restart the game using a controller.
+DONE: Added fast forward.
+	TODO: Speed up music and sound effects during fast forwarding.
+ADDED: You can now use quicksave and quickload while recording a replay.
+	TODO: Verify that the quickloaded state is from the currently running recording.
+
+(no release date yet)
+=================
+(upcoming version)
+
+FIXED: The prince can now grab a ledge at the bottom right corner of a room with no room below.
+	Details: https://forum.princed.org/viewtopic.php?p=30410#p30410
+FIXED: Don't allow killing a skeleton in cheat mode.
+FIXED: Ctrl+S didn't mute music (except death music).
+FIXED: A falling tile on the left side of a pillar could cause the blue stripe to be drawn over the pillar.
+FIXED: The top of moving gates became glitched on levels using non-default palettes.
+FIXED: The right edge of pressed drop buttons was black if a big pillar was next to them.
+FIXED: Guards appeared in the current room when they fell into spikes in an adjacent room. (Example: original level 11, room 22.)
+FIXED: Show an error message if a data file is missing.
+FIXED: "Remember guard hp" for non-standard guards.
+FIXED: Colored torches were not restored on quickload if you (quit and) restarted the game after quicksave.

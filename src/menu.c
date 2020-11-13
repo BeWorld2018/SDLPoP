@@ -1,6 +1,6 @@
 /*
 SDLPoP, a port/conversion of the DOS game Prince of Persia.
-Copyright (C) 2013-2019  Dávid Nagy
+Copyright (C) 2013-2020  Dávid Nagy
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -69,6 +69,7 @@ enum pause_menu_item_ids {
 	PAUSE_MENU_LOAD_GAME,
 	PAUSE_MENU_RESTART_LEVEL,
 	PAUSE_MENU_SETTINGS,
+	PAUSE_MENU_RESTART_GAME,
 	PAUSE_MENU_QUIT_GAME,
 	SETTINGS_MENU_GENERAL,
 	SETTINGS_MENU_GAMEPLAY,
@@ -86,6 +87,7 @@ pause_menu_item_type pause_menu_items[] = {
 		{.id = PAUSE_MENU_LOAD_GAME,     .text = "LOAD GAME"},
 		{.id = PAUSE_MENU_RESTART_LEVEL, .text = "RESTART LEVEL"},
 		{.id = PAUSE_MENU_SETTINGS,      .text = "SETTINGS"},
+		{.id = PAUSE_MENU_RESTART_GAME,  .text = "RESTART GAME"},
 		{.id = PAUSE_MENU_QUIT_GAME,     .text = "QUIT GAME"},
 };
 
@@ -1093,6 +1095,9 @@ void pause_menu_clicked(pause_menu_item_type* item) {
 			active_settings_subsection = 0;
 			controlled_area = 0;
 			break;
+		case PAUSE_MENU_RESTART_GAME:
+			last_key_scancode = SDL_SCANCODE_R | WITH_CTRL;
+			break;
 		case PAUSE_MENU_QUIT_GAME:
 			current_dialog_box = DIALOG_CONFIRM_QUIT;
 			current_dialog_text = "Quit SDLPoP?";
@@ -1396,7 +1401,7 @@ void draw_setting(setting_type* setting, rect_type* parent, int* y_offset, int i
 		rect_to_sdlrect(&setting_box, &dest_rect);
 		uint32_t rgb_color = SDL_MapRGBA(overlay_surface->format, 55, 55, 55, 255);
 		if (SDL_FillRect(overlay_surface, &dest_rect, rgb_color) != 0) {
-			sdlperror("SDL_FillRect");
+			sdlperror("draw_setting: SDL_FillRect");
 			quit(1);
 		}
 		rect_type left_side_of_setting_box = setting_box;
