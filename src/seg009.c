@@ -56,7 +56,6 @@ void find_exe_dir() {
 		NameFromLock( GetProgramDir(), exe_dir, sizeof(exe_dir) );
 	}
 #else
-	snprintf_check(exe_dir, sizeof(exe_dir), "%s", g_argv[0]);
 	char* last_slash = NULL;
 	char* pos = exe_dir;
 	for (char c = *pos; c != '\0'; c = *(++pos)) {
@@ -2357,11 +2356,6 @@ void __pascal far set_gr_mode(byte grmode) {
 		sdlperror("set_gr_mode: SDL_Init");
 		quit(1);
 	}
-
-/*#ifdef __amigaos4__
-	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2"); //"software", "opengl", "opengles2" or "compositing"
-	//SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt"); // implemented in master branch
-#endif*/
 
 	//SDL_EnableUNICODE(1); //deprecated
 	Uint32 flags = 0;

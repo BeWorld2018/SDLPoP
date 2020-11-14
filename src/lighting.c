@@ -39,7 +39,7 @@ void init_lighting() {
 		return;
 	}
 
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__MORPHOS__)
 	screen_overlay = SDL_CreateRGBSurface(0, 320, 192, 32, Rmsk, Gmsk, Bmsk, Amsk);
 #else
 	screen_overlay = SDL_CreateRGBSurface(0, 320, 192, 32, 0xFF << 0, 0xFF << 8, 0xFF << 16, 0xFF << 24);

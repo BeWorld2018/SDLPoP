@@ -206,6 +206,8 @@ The authors of this program may be contacted at https://forum.princed.org
 // A guard standing on a door top (with floor) should not become inactive.
 #define FIX_DOORTOP_DISABLING_GUARD
 
+#define FIX_SPIKED_GUARD
+
 
 // Debug features:
 
@@ -244,8 +246,6 @@ The authors of this program may be contacted at https://forum.princed.org
 #define SDL_JOYSTICK_X_AXIS 0
 #define SDL_JOYSTICK_Y_AXIS 1
 
-#endif
-
 #if defined(__amigaos4__) || defined(__MORPHOS__)
 	#define Rmsk  0x00ff0000
 	#define Gmsk  0x0000ff00
@@ -256,4 +256,6 @@ The authors of this program may be contacted at https://forum.princed.org
 	#define Gmsk  0x0000ff00
 	#define Bmsk  0x00ff0000
 	#define Amsk  0xff000000
+#endif
+
 #endif

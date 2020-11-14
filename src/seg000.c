@@ -1969,42 +1969,6 @@ void __pascal far draw_full_image(enum full_image_id id) {
 		break;
 	}
 }
-// seg000:1C3A
-void __pascal far draw_full_image(enum full_image_id id) {
-	image_type* decoded_image;
-	image_type* mask = NULL;
-	int xpos, ypos, blit;
-
-	if (id >= MAX_FULL_IMAGES) return;
-	if (NULL == *full_image[id].chtab) return;
-	decoded_image = (*full_image[id].chtab)->images[full_image[id].id];
-	blit = full_image[id].blitter;
-	xpos = full_image[id].xpos;
-	ypos = full_image[id].ypos;
-
-	switch (blit) {
-	case blitters_white:
-		blit = get_text_color(15, color_15_brightwhite, 0x800);
-		/* fall through */
-	default:
-		method_3_blit_mono(decoded_image, xpos, ypos, blitters_0_no_transp, blit);
-		break;
-	case blitters_10h_transp:
-		if (graphics_mode == gmCga || graphics_mode == gmHgaHerc) {
-			//...
-		} else {
-			mask = decoded_image;
-		}
-		draw_image_transp(decoded_image, mask, xpos, ypos);
-		if (graphics_mode == gmCga || graphics_mode == gmHgaHerc) {
-			free_far(mask);
-		}
-		break;
-	case blitters_0_no_transp:
-		method_6_blit_img_to_scr(decoded_image, xpos, ypos, blit);
-		break;
-	}
-}
 
 // seg000:1D2C
 void __pascal far load_kid_sprite() {
