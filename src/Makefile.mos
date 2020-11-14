@@ -1,6 +1,7 @@
-# Project: SDLPoP
+# Project: SDLPoP (MorphOS)
 
 CC = ppc-morphos-gcc-9
+STRIP = ppc-morphos-strip
 RM = rm -f
 
 HFILES = common.h config.h data.h proto.h types.h
@@ -8,11 +9,11 @@ OBJ = main.o data.o seg000.o seg001.o seg002.o seg003.o seg004.o seg005.o seg006
 BIN = ../prince
 
 OS      := $(shell uname)
+AMIGADATE = $(shell date +"%-d.%-m.%Y")
 
 
-LIBS := -lSDL2_image -lSDL2_mixer  -lSDL2  -L/usr/local/include -noixemul -lc -lm
-INCS := -I/usr/local/include -noixemul
-CFLAGS += $(INCS) -Wall -std=gnu99 -D_GNU_SOURCE=1 -D_THREAD_SAFE -DOSX -O2
+LIBS := -lSDL2_image -lSDL2_mixer  -lSDL2  -L/usr/local/lib -noixemul -lc -lm
+INCS := -I/usr/local/include -noixemul -D__AMIGADATE__=\"$(AMIGADATE)\"
 CFLAGS += $(INCS) -Wall -std=gnu99 -O2
 
 all: $(BIN)
@@ -20,15 +21,10 @@ all: $(BIN)
 clean:
 	$(RM) $(OBJ) $(BIN)
 
-install:
-	./install.sh
-
-uninstall:
-	./uninstall.sh
 
 $(BIN): $(OBJ)
 	$(CC) $(LDFLAGS) $(OBJ) -o $@ $(LIBS)
-	ppc-morphos-strip --strip-all $(BIN)
+	$(STRIP) --strip-all $(BIN)
 
 %.o: %.c $(HFILES)
 	$(CC) $(CFLAGS) $(LDFLAGS) -c $<

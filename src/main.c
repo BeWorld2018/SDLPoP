@@ -21,11 +21,14 @@ The authors of this program may be contacted at https://forum.princed.org
 #include "common.h"
 
 
-#if defined( __amigaos4__) || defined(__MORPHOS__)
+#if defined( __amigaos4__) 
 static const char version[] = "\0$VER: SDLPoP " SDLPOP_VERSION " (" __AMIGADATE__ ")";
 static const char stack[] = "$STACK:200000";
 #endif
-
+#ifdef __MORPHOS__
+unsigned long __stack = 200000;
+static const char *version __attribute__((used)) = "$VER: SDLPoP " SDLPOP_VERSION " (" __AMIGADATE__ ")";
+#endif
 
 int main(int argc, char *argv[])
 {
