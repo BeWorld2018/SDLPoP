@@ -46,6 +46,7 @@ bool found_exe_dir = false;
 
 void find_exe_dir() {
 	if (found_exe_dir) return;
+	snprintf_check(exe_dir, sizeof(exe_dir), "%s", g_argv[0]);
 #ifdef __amigaos4__
 	if(g_argc == 0) {
 		struct WBStartup *WBenchMsg = (struct WBStartup *)g_argv;
@@ -386,7 +387,7 @@ dat_type *__pascal open_dat(const char *filename,int drive) {
 	dat_chain_ptr = pointer;
 
 	if (fp != NULL) {
-		if (fread(&dat_header, sizeof(dat_header_type), 1, fp) != 1)
+		if (fread(&dat_header, 6, 1, fp) != 1)
 			goto failed;
 		dat_table = (dat_table_type*) malloc(SDL_SwapLE16(dat_header.table_size));
 		if (dat_table == NULL ||
@@ -2357,10 +2358,10 @@ void __pascal far set_gr_mode(byte grmode) {
 		quit(1);
 	}
 
-#ifdef __amigaos4__
+/*#ifdef __amigaos4__
 	//SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengles2"); //"software", "opengl", "opengles2" or "compositing"
-	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
-#endif
+	//SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt"); // implemented in master branch
+#endif*/
 
 	//SDL_EnableUNICODE(1); //deprecated
 	Uint32 flags = 0;

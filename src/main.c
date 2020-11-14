@@ -20,10 +20,12 @@ The authors of this program may be contacted at https://forum.princed.org
 
 #include "common.h"
 
-#ifdef __MORPHOS__
-unsigned long __stack = 1000000;
-static const char *version __attribute__((used)) = "$VER: SDLPoP 1.2.0 (9.8.2020) port by BeWorld";
+
+#if defined( __amigaos4__) || defined(__MORPHOS__)
+static const char version[] = "\0$VER: SDLPoP " SDLPOP_VERSION " (" __AMIGADATE__ ")";
+static const char stack[] = "$STACK:200000";
 #endif
+
 
 int main(int argc, char *argv[])
 {
@@ -32,4 +34,3 @@ int main(int argc, char *argv[])
 	pop_main();
 	return 0;
 }
-

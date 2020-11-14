@@ -746,5 +746,3 @@ int process_rw_read(SDL_RWops* rw, void* data, size_t data_size) {
 	return SDL_RWread(rw, data, data_size, 1);
 	// if this returns 0, most likely the end of the stream has been reached
 }
-
-
