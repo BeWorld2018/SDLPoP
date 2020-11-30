@@ -62,6 +62,7 @@ void far pop_main() {
 #ifdef USE_MENU
 	load_ingame_settings();
 #endif
+	if (check_param("mute")) is_sound_on = 0;
 	turn_sound_on_off((is_sound_on != 0) * 15); // Turn off sound/music if those options were set.
 
 #ifdef USE_REPLAY
@@ -96,7 +97,7 @@ void far pop_main() {
 
 	/*video_mode =*/ parse_grmode();
 
-	init_timer(60);
+	init_timer(BASE_FPS);
 	parse_cmdline_sound();
 
 	set_hc_pal();
@@ -379,7 +380,8 @@ void restore_room_after_quick_load() {
 
 	//need_full_redraw = 1;
 	different_room = 1;
-	next_room = drawn_room;
+	// Show the room where the prince is, even if the player moved the view away from it (with the H,J,U,N keys).
+	next_room = drawn_room = Kid.room;
 	load_room_links();
 	//draw_level_first();
 	//gen_palace_wall_colors();
@@ -388,6 +390,13 @@ void restore_room_after_quick_load() {
 	//redraw_screen(1); // for room_L
 
 	hitp_delta = guardhp_delta = 1; // force HP redraw
+	// Don't draw guard HP if a previously viewed room (with the H,J,U,N keys) had a guard but the current room doesn't have one.
+	if (Guard.room != drawn_room) {
+		// Like in clear_char().
+		Guard.direction = dir_56_none;
+		guardhp_curr = 0;
+	}
+
 	draw_hp();
 	loadkid_and_opp();
 	// Get rid of "press button" message if kid was dead before quickload.
@@ -1892,6 +1901,10 @@ void __pascal far transition_ltr() {
 	// Estimated transition fps based on the speed of the transition on an Apple IIe.
 	// See: https://www.youtube.com/watch?v=7m7j2VuWhQ0
 	int transition_fps = 120;
+#ifdef USE_FAST_FORWARD
+	extern int audio_speed;
+	transition_fps *= audio_speed;
+#endif
 	Uint64 counters_per_frame = perf_frequency / transition_fps;
 	last_transition_counter = SDL_GetPerformanceCounter();
 	int overshoot = 0;
@@ -2249,8 +2262,10 @@ const rect_type splash_text_2_rect = {50, 0, 200, 320};
 
 const char* splash_text_1 = "SDLPoP " SDLPOP_VERSION;
 const char* splash_text_2 =
+#ifdef USE_QUICKSAVE
 		"To quick save/load, press F6/F9 in-game.\n"
 		"\n"
+#endif
 #ifdef USE_REPLAY
 		"To record replays, press Ctrl+Tab in-game.\n"
 		"To view replays, press Tab on the title screen.\n"
@@ -2271,6 +2286,7 @@ void show_splash() {
 	show_text_with_color(&splash_text_1_rect, 0, 0, splash_text_1, color_15_brightwhite);
 	show_text_with_color(&splash_text_2_rect, 0, -1, splash_text_2, color_7_lightgray);
 
+#ifdef USE_TEXT // Don't wait for a keypress if there is no text for the user to read.
 	int key = 0;
 	do {
 		idle();
@@ -2293,4 +2309,6 @@ void show_splash() {
 	}
 	key_states[SDL_SCANCODE_LSHIFT] = 0; // don't immediately start the game if shift was pressed!
 	key_states[SDL_SCANCODE_RSHIFT] = 0;
+#endif
 }
+

@@ -83,8 +83,10 @@ pause_menu_item_type pause_menu_items[] = {
 		{.id = PAUSE_MENU_RESUME,        .text = "RESUME"},
 		// TODO: Add a cheats menu, where you can choose a cheat from a list?
 		/*{.id = PAUSE_MENU_CHEATS,        .text = "CHEATS", .required = &cheats_enabled},*/
-		{.id = PAUSE_MENU_SAVE_GAME,     .text = "SAVE GAME"},
-		{.id = PAUSE_MENU_LOAD_GAME,     .text = "LOAD GAME"},
+#ifdef USE_QUICKSAVE // TODO: If quicksave is disabled, show regular save/load instead?
+		{.id = PAUSE_MENU_SAVE_GAME,     .text = "QUICKSAVE"},
+		{.id = PAUSE_MENU_LOAD_GAME,     .text = "QUICKLOAD"},
+#endif
 		{.id = PAUSE_MENU_RESTART_LEVEL, .text = "RESTART LEVEL"},
 		{.id = PAUSE_MENU_SETTINGS,      .text = "SETTINGS"},
 		{.id = PAUSE_MENU_RESTART_GAME,  .text = "RESTART GAME"},
@@ -348,24 +350,33 @@ setting_type visuals_settings[] = {
 				.explanation = "Sharp - Use nearest neighbour resampling.\n"
 						"Fuzzy - First upscale to double size, then use smooth scaling.\n"
 						"Blurry - Use smooth scaling."},
+#ifdef USE_FADE
 		{.id = SETTING_ENABLE_FADE, .style = SETTING_STYLE_TOGGLE, .linked = &enable_fade,
 				.text = "Fading enabled",
 				.explanation = "Turn fading on or off."},
+#endif
+#ifdef USE_FLASH
 		{.id = SETTING_ENABLE_FLASH, .style = SETTING_STYLE_TOGGLE, .linked = &enable_flash,
 				.text = "Flashing enabled",
 				.explanation = "Turn flashing on or off."},
+#endif
+#ifdef USE_LIGHTING
 		{.id = SETTING_ENABLE_LIGHTING, .style = SETTING_STYLE_TOGGLE, .linked = &enable_lighting,
 				.text = "Torch shadows enabled",
-				.explanation = "Darken those parts of the screen that are not near a torch."},
+				.explanation = "Darken those parts of the screen which are not near a torch."},
+#endif
 };
 
 setting_type gameplay_settings[] = {
 		{.id = SETTING_ENABLE_CHEATS, .style = SETTING_STYLE_TOGGLE, .linked = &cheats_enabled,
 				.text = "Enable cheats",
 				.explanation = "Turn cheats on or off."/*"\nAlso, display the CHEATS option on the pause menu."*/},
+#ifdef USE_COPYPROT
 		{.id = SETTING_ENABLE_COPYPROT, .style = SETTING_STYLE_TOGGLE, .linked = &enable_copyprot,
 				.text = "Enable copy protection level",
 				.explanation = "Enable or disable the potions (copy protection) level."},
+#endif
+#ifdef USE_QUICKSAVE
 		{.id = SETTING_ENABLE_QUICKSAVE, .style = SETTING_STYLE_TOGGLE, .linked = &enable_quicksave,
 				.text = "Enable quicksave",
 				.explanation = "Enable quicksave/load feature.\nPress F6 to quicksave, F9 to quickload."},
@@ -374,11 +385,14 @@ setting_type gameplay_settings[] = {
 				.explanation = "Try to let time run out when quickloading (similar to dying).\n"
 						"Actually, the 'remaining time' will still be restored, "
 						"but a penalty (up to one minute) will be applied."},
+#endif
+#ifdef USE_REPLAY
 		{.id = SETTING_ENABLE_REPLAY, .style = SETTING_STYLE_TOGGLE, .linked = &enable_replay,
 				.text = "Enable replays",
 				.explanation = "Enable recording/replay feature.\n"
 						"Press Ctrl+Tab in-game to start recording.\n"
 						"To stop, press Ctrl+Tab again."},
+#endif
 		{.id = SETTING_USE_FIXES_AND_ENHANCEMENTS, .style = SETTING_STYLE_TOGGLE, .linked = &use_fixes_and_enhancements,
 				.text = "Enhanced mode (allow bug fixes)",
 				.explanation = "Turn on game fixes and enhancements.\n"
@@ -1221,6 +1235,7 @@ void turn_setting_on_off(int setting_id, byte new_state, void* linked) {
 #endif
 			}
 			break;
+#ifdef USE_LIGHTING
 		case SETTING_ENABLE_LIGHTING:
 			enable_lighting = new_state;
 			if (new_state && lighting_mask == NULL) {
@@ -1228,6 +1243,7 @@ void turn_setting_on_off(int setting_id, byte new_state, void* linked) {
 			}
 			need_full_redraw = 1;
 			break;
+#endif
 		case SETTING_ENABLE_SOUND:
 			turn_sound_on_off((new_state != 0) * 15);
 			break;
@@ -1559,6 +1575,25 @@ void draw_settings_area(settings_area_type* settings_area) {
 	if (scroll_position + num_drawn_settings < settings_area->setting_count) {
 		draw_image_with_blending(arrowhead_down_image, 200, 151);
 	}
+
+	// Draw a scroll bar if needed.
+	// It's not clickable yet, it just shows where you are in the list.
+	if (num_drawn_settings < settings_area->setting_count) {
+		const int scrollbar_width = 2;
+		rect_type scrollbar_rect = {
+			.top = settings_area_rect.top - 5, .bottom = settings_area_rect.bottom,
+			.left = settings_area_rect.right + 10 - scrollbar_width, .right = settings_area_rect.right + 10
+		};
+		method_5_rect(&scrollbar_rect, blitters_0_no_transp, color_8_darkgray);
+
+		int scrollbar_height = scrollbar_rect.bottom - scrollbar_rect.top;
+		rect_type scrollbar_slider_rect = {
+			.top = scrollbar_rect.top + scroll_position * scrollbar_height / settings_area->setting_count,
+			.bottom = scrollbar_rect.top + (scroll_position + num_drawn_settings) * scrollbar_height / settings_area->setting_count,
+			.left = scrollbar_rect.left, .right = scrollbar_rect.right
+		};
+		method_5_rect(&scrollbar_slider_rect, blitters_0_no_transp, color_7_lightgray);
+	}
 }
 
 void draw_settings_menu() {
@@ -1626,7 +1661,9 @@ void confirmation_dialog_result(int which_dialog, int button) {
 			were_settings_changed = true;
 			set_options_to_default();
 			turn_setting_on_off(SETTING_USE_INTEGER_SCALING, use_integer_scaling, NULL);
+#ifdef USE_LIGHTING
 			turn_setting_on_off(SETTING_ENABLE_LIGHTING, enable_lighting, NULL);
+#endif
 			apply_aspect_ratio();
 			turn_sound_on_off((is_sound_on != 0) * 15);
 			turn_music_on_off(enable_music);
@@ -1997,7 +2034,9 @@ void process_ingame_settings_user_managed(SDL_RWops* rw, rw_process_func_type pr
 	process(scaling_type);
 	process(enable_fade);
 	process(enable_flash);
+#ifdef USE_LIGHTING
 	process(enable_lighting);
+#endif
 }
 
 void process_ingame_settings_mod_managed(SDL_RWops* rw, rw_process_func_type process_func) {

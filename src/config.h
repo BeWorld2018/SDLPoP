@@ -65,8 +65,12 @@ The authors of this program may be contacted at https://forum.princed.org
 // The one minute penalty will also be applied when quickloading from e.g. the title screen.
 #define USE_QUICKLOAD_PENALTY
 
+#ifdef USE_QUICKSAVE // Replay relies on quicksave, because the replay file begins with a quicksave of the initial state.
+
 // Enable recording/replay feature.
 #define USE_REPLAY
+
+#endif
 
 // Adds a way to crouch immediately after climbing up: press down and forward simultaneously.
 // In the original game, this could not be done (pressing down always causes the kid to climb down).
@@ -225,7 +229,7 @@ The authors of this program may be contacted at https://forum.princed.org
 
 
 
-// Darken those parts of the screen that are not near a torch.
+// Darken those parts of the screen which are not near a torch.
 #define USE_LIGHTING
 
 // Enable screenshot features.
@@ -235,10 +239,29 @@ The authors of this program may be contacted at https://forum.princed.org
 // Useful if SDL detected a gamepad but there is none.
 #define USE_AUTO_INPUT_MODE
 
+#ifdef USE_TEXT // The menu won't work without text.
+
 // Display the in-game menu.
 #define USE_MENU
 
+#endif
+
+// Enable colored torches. A torch can be colored by changing its modifier in a level editor.
 #define USE_COLORED_TORCHES
+
+// Enable fast forwarding with the backtick key.
+#define USE_FAST_FORWARD
+
+// Set how much should the fast forwarding speed up the game.
+#define FAST_FORWARD_RATIO 10
+
+// Speed up the sound during fast forward using resampling.
+// If disabled, the sound is sped up by clipping out parts from it.
+//#define FAST_FORWARD_RESAMPLE_SOUND
+
+// Mute the sound during fast forward.
+//#define FAST_FORWARD_MUTE
+
 
 // Default SDL_Joystick button values
 #define SDL_JOYSTICK_BUTTON_Y 2

@@ -576,3 +576,17 @@ FIXED: Guards appeared in the current room when they fell into spikes in an adja
 FIXED: Show an error message if a data file is missing.
 FIXED: "Remember guard hp" for non-standard guards.
 FIXED: Colored torches were not restored on quickload if you (quit and) restarted the game after quicksave.
+DONE: Added command-line parameter "mute": Start the game with sound off.
+FIXED: Fixed compiling with some features #undefined. (USE_TEXT, USE_LIGHTING, USE_MENU)
+DONE: Hide references to various features if the game was compiled without them.
+DONE: A scrollbar appears in the pause menu if scrolling is possible.
+	It's not clickable yet, it just shows where you are in the list.
+DONE: Added command-line parameter "playdemo": Make the demo level playable.
+FIXED: Fixed the detection of Ctrl+L during the demo level.
+FIXED: Create the screenshots directory in SDLPoP's directory, even if the current directory is something else.
+	This is to match how the replay folder works.
+FIXED: On Windows, use Unicode/UTF-8 for mkdir().
+	So the replay and screenshots directories can be created within non-ASCII paths.
+FIXED: After quickload, show the room where the prince is, even if the player moved the view away from it (with the H,J,U,N keys).
+FIXED: After quickload, don't draw guard HP if a previously viewed room (with the H,J,U,N keys) had a guard but the current room doesn't have one.
+DONE: Speed up music, sounds, and transitions during fast forwarding.

@@ -678,8 +678,10 @@ extern word justblocked; // name from Apple II source
 extern word last_loose_sound;
 
 extern int last_key_scancode;
+#ifdef USE_TEXT
 extern font_type hc_font INIT(= {0x01,0xFF, 7,2,1,1, NULL});
 extern textstate_type textstate INIT(= {0,0,0,15,&hc_font});
+#endif
 extern int need_quick_save INIT(= 0);
 extern int need_quick_load INIT(= 0);
 
@@ -896,8 +898,8 @@ extern bool escape_key_suppressed;
 extern int menu_control_scroll_y;
 extern sbyte is_menu_shown;
 extern byte enable_pause_menu INIT(= 1);
-extern char mods_folder[POP_MAX_PATH] INIT(= "mods");
 #endif
+extern char mods_folder[POP_MAX_PATH] INIT(= "mods");
 
 #undef INIT
 #undef extern

@@ -174,13 +174,13 @@ static int global_ini_callback(const char *section, const char *name, const char
 	if (check_ini_section("General")) {
 #ifdef USE_MENU
 		process_boolean("enable_pause_menu", &enable_pause_menu);
+#endif
 		if (strcasecmp(name, "mods_folder") == 0) {
 			if (value[0] != '\0' && strcasecmp(value, "default") != 0) {
 				strcpy(mods_folder, locate_file(value));
 			}
 			return 1;
 		}
-#endif
 		process_boolean("enable_copyprot", &enable_copyprot);
 		process_boolean("enable_music", &enable_music);
 		process_boolean("enable_fade", &enable_fade);
@@ -442,7 +442,9 @@ void set_options_to_default() {
 	enable_quicksave = 1;
 	enable_quicksave_penalty = 1;
 	enable_replay = 1;
+#ifdef USE_LIGHTING
 	enable_lighting = 0;
+#endif
 	// By default, all the fixes are used, unless otherwise specified.
 	// So, if one of these options is omitted from the INI file, they default to true.
 	memset(&fixes_saved, 1, sizeof(fixes_saved));
